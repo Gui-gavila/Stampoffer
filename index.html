@@ -1,0 +1,580 @@
+import { useState, useEffect, useRef } from "react";
+
+const SERVICES = [
+  { icon: "◈", name: "Estamparia Industrial", desc: "Fabricação de artefatos estampados em aço, ferro e metais não-ferrosos com alta precisão dimensional e repetibilidade para grandes séries." },
+  { icon: "◉", name: "Repuxo Metálico", desc: "Peças repuxadas com geometrias complexas e tolerâncias técnicas rigorosas, ideais para componentes automotivos e industriais." },
+  { icon: "◫", name: "Funilaria Metálica", desc: "Produção de calhas, condutores, baldes e artefatos de funilaria para aplicações industriais e comerciais de alto volume." },
+  { icon: "◧", name: "Manutenção de Prensas", desc: "Manutenção corretiva e preventiva de máquinas-ferramenta e prensas industriais, garantindo máxima disponibilidade operacional." },
+  { icon: "◨", name: "Produção sob Medida", desc: "Desenvolvimento completo desde o projeto do ferramental até a peça acabada, seguindo exatamente suas especificações técnicas." },
+  { icon: "◩", name: "Atacado Industrial", desc: "Fornecimento atacadista de máquinas, equipamentos e componentes para distribuidores e indústrias parceiras." },
+];
+
+const STATS = [
+  { value: "2021", label: "Fundação" },
+  { value: "Mauá", label: "ABC Paulista" },
+  { value: "6+", label: "Serviços oferecidos" },
+  { value: "B2B", label: "Foco industrial" },
+];
+
+function useInView(threshold = 0.15) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold });
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, []);
+  return [ref, visible];
+}
+
+function FadeIn({ children, delay = 0, y = 24 }) {
+  const [ref, vis] = useInView();
+  return (
+    <div ref={ref} style={{
+      opacity: vis ? 1 : 0,
+      transform: vis ? "translateY(0)" : `translateY(${y}px)`,
+      transition: `opacity .8s cubic-bezier(.4,0,.2,1) ${delay}s, transform .8s cubic-bezier(.4,0,.2,1) ${delay}s`,
+    }}>{children}</div>
+  );
+}
+
+export default function App() {
+  const [scrollY, setScrollY] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [formState, setFormState] = useState({ nome:"", empresa:"", tel:"", email:"", servico:"", msg:"" });
+  const [sent, setSent] = useState(false);
+
+  useEffect(() => {
+    const fn = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", fn);
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
+
+  const navBg = scrollY > 40
+    ? "rgba(255,255,255,0.95)"
+    : "rgba(255,255,255,0)";
+  const navBorder = scrollY > 40 ? "1px solid #e8eaf0" : "1px solid transparent";
+  const navColor = scrollY > 40 ? "#0d1b3e" : "#fff";
+
+  const go = (id) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    setMenuOpen(false);
+  };
+
+  const handleSend = (e) => {
+    e.preventDefault();
+    setSent(true);
+    setTimeout(() => setSent(false), 5000);
+  };
+
+  const inp = {
+    width: "100%",
+    padding: "13px 16px",
+    border: "1.5px solid #dde1ee",
+    borderRadius: 6,
+    background: "#f8f9fc",
+    color: "#0d1b3e",
+    fontSize: 14,
+    fontFamily: "inherit",
+    outline: "none",
+    transition: "border-color .2s",
+  };
+
+  return (
+    <div style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, sans-serif", background: "#fff", color: "#0d1b3e", overflowX: "hidden" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { overflow-x: hidden; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #1a3a7c; border-radius: 2px; }
+        ::placeholder { color: #aab0c6; }
+        input:focus, textarea:focus, select:focus { border-color: #1a3a7c !important; background: #fff !important; }
+        select { appearance: none; cursor: pointer; }
+        button { cursor: pointer; }
+      `}</style>
+
+      {/* ── NAV ── */}
+      <nav style={{
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 200,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 6vw", height: 66,
+        background: navBg,
+        backdropFilter: scrollY > 40 ? "blur(16px)" : "none",
+        borderBottom: navBorder,
+        transition: "all .35s ease",
+      }}>
+        <div onClick={() => go("hero")} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+          <svg width="32" height="32" viewBox="0 0 32 32">
+            <rect width="32" height="32" rx="6" fill={scrollY > 40 ? "#0d1b3e" : "#fff"} opacity={scrollY > 40 ? 1 : 0.15}/>
+            <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle"
+              fill={scrollY > 40 ? "#fff" : "#fff"}
+              fontSize="13" fontWeight="800" fontFamily="Inter,sans-serif" letterSpacing="0">SF</text>
+          </svg>
+          <span style={{
+            fontWeight: 700, fontSize: 16, letterSpacing: 0.5,
+            color: navColor, transition: "color .35s",
+          }}>Stampoferr</span>
+        </div>
+
+        {/* Desktop links */}
+        <div style={{ display: "flex", gap: 32, alignItems: "center" }}>
+          {[["sobre","Sobre"],["servicos","Serviços"],["galeria","Galeria"]].map(([id, label]) => (
+            <button key={id} onClick={() => go(id)} style={{
+              background: "none", border: "none",
+              fontSize: 14, fontWeight: 500, color: navColor,
+              opacity: 0.8, transition: "opacity .2s, color .35s",
+              letterSpacing: 0.2,
+            }} onMouseEnter={e => e.target.style.opacity=1} onMouseLeave={e => e.target.style.opacity=0.8}>
+              {label}
+            </button>
+          ))}
+          <button onClick={() => go("contato")} style={{
+            background: "#1a3a7c", color: "#fff",
+            border: "none", borderRadius: 6,
+            padding: "9px 22px", fontSize: 13, fontWeight: 600,
+            letterSpacing: 0.3, transition: "background .2s",
+          }} onMouseEnter={e => e.target.style.background="#0d1b3e"}
+             onMouseLeave={e => e.target.style.background="#1a3a7c"}>
+            Solicitar Orçamento
+          </button>
+        </div>
+      </nav>
+
+      {/* ── HERO ── */}
+      <section id="hero" style={{
+        position: "relative", minHeight: "100vh",
+        display: "flex", flexDirection: "column", justifyContent: "center",
+        overflow: "hidden",
+      }}>
+        {/* BG */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: `linear-gradient(160deg, #0d1b3e 0%, #1a3a7c 55%, #1e4db7 100%)`,
+        }}/>
+        {/* subtle grid */}
+        <div style={{
+          position: "absolute", inset: 0, opacity: 0.04,
+          backgroundImage: "linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)",
+          backgroundSize: "60px 60px",
+        }}/>
+        {/* glow */}
+        <div style={{
+          position: "absolute", top: "10%", right: "-10%",
+          width: "60vw", height: "60vw", borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(100,160,255,0.18) 0%, transparent 70%)",
+          pointerEvents: "none",
+        }}/>
+
+        <div style={{ position: "relative", zIndex: 2, padding: "120px 6vw 80px", maxWidth: 780 }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)",
+            borderRadius: 20, padding: "6px 14px", marginBottom: 32,
+          }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#64d2a0" }}/>
+            <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.85)", letterSpacing: 0.5 }}>
+              Mauá · SP — ABC Paulista
+            </span>
+          </div>
+
+          <h1 style={{
+            fontSize: "clamp(44px, 7vw, 88px)",
+            fontWeight: 700, lineHeight: 1.05,
+            color: "#fff", letterSpacing: -1.5,
+            marginBottom: 24,
+          }}>
+            Estamparia de<br/>
+            <span style={{
+              background: "linear-gradient(90deg, #64a0ff, #a0c8ff)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            }}>precisão industrial</span><br/>
+            no ABC Paulista.
+          </h1>
+
+          <p style={{
+            fontSize: 17, fontWeight: 300, lineHeight: 1.75,
+            color: "rgba(255,255,255,0.7)", maxWidth: 500, marginBottom: 44,
+          }}>
+            Fabricamos peças estampadas de metal, repuxo e funilaria com tecnologia de ponta para atender indústrias automotivas, moveleiras e metalúrgicas.
+          </p>
+
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button onClick={() => go("contato")} style={{
+              background: "#fff", color: "#0d1b3e",
+              border: "none", borderRadius: 8,
+              padding: "14px 30px", fontSize: 14, fontWeight: 600,
+              letterSpacing: 0.2, transition: "transform .2s, box-shadow .2s",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
+            }} onMouseEnter={e => { e.target.style.transform="translateY(-2px)"; e.target.style.boxShadow="0 8px 28px rgba(0,0,0,0.25)"; }}
+               onMouseLeave={e => { e.target.style.transform=""; e.target.style.boxShadow="0 4px 20px rgba(0,0,0,0.2)"; }}>
+              Solicitar Orçamento →
+            </button>
+            <button onClick={() => go("servicos")} style={{
+              background: "transparent", color: "rgba(255,255,255,0.85)",
+              border: "1.5px solid rgba(255,255,255,0.3)", borderRadius: 8,
+              padding: "14px 30px", fontSize: 14, fontWeight: 500,
+              transition: "border-color .2s, color .2s",
+            }} onMouseEnter={e => { e.target.style.borderColor="rgba(255,255,255,0.7)"; e.target.style.color="#fff"; }}
+               onMouseLeave={e => { e.target.style.borderColor="rgba(255,255,255,0.3)"; e.target.style.color="rgba(255,255,255,0.85)"; }}>
+              Conhecer serviços
+            </button>
+          </div>
+        </div>
+
+        {/* Stats bar */}
+        <div style={{
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          background: "rgba(255,255,255,0.06)",
+          backdropFilter: "blur(12px)",
+          borderTop: "1px solid rgba(255,255,255,0.1)",
+          display: "flex", flexWrap: "wrap",
+        }}>
+          {STATS.map((s, i) => (
+            <div key={i} style={{
+              flex: "1 1 120px", padding: "22px 5vw",
+              borderRight: i < STATS.length - 1 ? "1px solid rgba(255,255,255,0.1)" : "none",
+            }}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: "#fff", letterSpacing: -0.5 }}>{s.value}</div>
+              <div style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.5)", marginTop: 3, textTransform: "uppercase", letterSpacing: 1 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── SOBRE ── */}
+      <section id="sobre" style={{ padding: "120px 6vw", background: "#fff" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 80, alignItems: "center", maxWidth: 1200, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ position: "relative" }}>
+              <div style={{
+                borderRadius: 16, overflow: "hidden",
+                aspectRatio: "4/3", background: "#f0f4ff",
+              }}>
+                <img
+                  src="https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=800&q=80"
+                  alt="Fábrica Stampoferr"
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              </div>
+              {/* floating card */}
+              <div style={{
+                position: "absolute", bottom: -20, right: -20,
+                background: "#0d1b3e", borderRadius: 12,
+                padding: "18px 24px", boxShadow: "0 16px 40px rgba(13,27,62,0.25)",
+              }}>
+                <div style={{ fontSize: 26, fontWeight: 700, color: "#fff" }}>Mauá/SP</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>ABC Paulista</div>
+              </div>
+            </div>
+          </FadeIn>
+
+          <FadeIn delay={0.15}>
+            <div>
+              <div style={{ display: "inline-block", background: "#eef2ff", color: "#1a3a7c", fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", padding: "5px 12px", borderRadius: 4, marginBottom: 20 }}>
+                Sobre a Empresa
+              </div>
+              <h2 style={{ fontSize: "clamp(32px,4vw,52px)", fontWeight: 700, lineHeight: 1.1, letterSpacing: -1, color: "#0d1b3e", marginBottom: 20 }}>
+                Transformamos metal<br/>com precisão e cuidado.
+              </h2>
+              <p style={{ fontSize: 15, fontWeight: 400, color: "#4a5568", lineHeight: 1.8, marginBottom: 36 }}>
+                A Stampoferr é especializada na fabricação de peças estampadas de metal, repuxo e funilaria industrial. Localizada estrategicamente em Mauá/SP, atendemos indústrias automotivas, moveleiras e metalúrgicas com qualidade e agilidade.
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                {[
+                  ["⚙️", "Prensas Modernas", "Equipamentos de última geração."],
+                  ["📍", "Localização Estratégica", "Coração do ABC Paulista."],
+                  ["🏅", "Qualidade Garantida", "Controle rigoroso em cada peça."],
+                  ["🤝", "Atendimento Dedicado", "Equipe técnica especializada."],
+                ].map(([icon, title, desc]) => (
+                  <div key={title} style={{
+                    padding: "16px 18px",
+                    border: "1.5px solid #e8eaf0",
+                    borderRadius: 10,
+                    transition: "border-color .2s, box-shadow .2s",
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor="#1a3a7c"; e.currentTarget.style.boxShadow="0 4px 16px rgba(26,58,124,0.08)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor="#e8eaf0"; e.currentTarget.style.boxShadow="none"; }}>
+                    <div style={{ fontSize: 20, marginBottom: 8 }}>{icon}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#0d1b3e" }}>{title}</div>
+                    <div style={{ fontSize: 11, color: "#8892a4", marginTop: 3, lineHeight: 1.5 }}>{desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* ── SERVIÇOS ── */}
+      <section id="servicos" style={{ padding: "120px 6vw", background: "#f7f9ff" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 64 }}>
+              <div style={{ display: "inline-block", background: "#eef2ff", color: "#1a3a7c", fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", padding: "5px 12px", borderRadius: 4, marginBottom: 16 }}>
+                Serviços
+              </div>
+              <h2 style={{ fontSize: "clamp(32px,4vw,52px)", fontWeight: 700, letterSpacing: -1, color: "#0d1b3e", lineHeight: 1.1 }}>
+                O que oferecemos
+              </h2>
+            </div>
+          </FadeIn>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 20 }}>
+            {SERVICES.map((s, i) => (
+              <FadeIn key={i} delay={i * 0.06}>
+                <ServiceCard s={s} />
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── BANNER CTA ── */}
+      <section style={{
+        background: "linear-gradient(135deg, #0d1b3e 0%, #1a3a7c 100%)",
+        padding: "80px 6vw", textAlign: "center",
+      }}>
+        <FadeIn>
+          <p style={{ fontSize: 13, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginBottom: 16 }}>Localização</p>
+          <h2 style={{ fontSize: "clamp(28px,4vw,48px)", fontWeight: 700, color: "#fff", letterSpacing: -0.8, marginBottom: 16 }}>
+            Prontos para atender<br/>sua indústria.
+          </h2>
+          <p style={{ fontSize: 15, color: "rgba(255,255,255,0.6)", marginBottom: 36, maxWidth: 480, margin: "0 auto 36px" }}>
+            Estamos em Mauá/SP, no coração do ABC Paulista — a região industrial mais relevante do Brasil.
+          </p>
+          <button onClick={() => go("contato")} style={{
+            background: "#fff", color: "#0d1b3e",
+            border: "none", borderRadius: 8,
+            padding: "14px 32px", fontSize: 14, fontWeight: 600,
+            transition: "transform .2s",
+          }} onMouseEnter={e => e.target.style.transform="translateY(-2px)"}
+             onMouseLeave={e => e.target.style.transform=""}>
+            Falar com a equipe →
+          </button>
+        </FadeIn>
+      </section>
+
+      {/* ── GALERIA ── */}
+      <section id="galeria" style={{ padding: "120px 6vw", background: "#fff" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ marginBottom: 52 }}>
+              <div style={{ display: "inline-block", background: "#eef2ff", color: "#1a3a7c", fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", padding: "5px 12px", borderRadius: 4, marginBottom: 16 }}>
+                Portfólio
+              </div>
+              <h2 style={{ fontSize: "clamp(32px,4vw,52px)", fontWeight: 700, letterSpacing: -1, color: "#0d1b3e" }}>
+                Nosso trabalho
+              </h2>
+            </div>
+          </FadeIn>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 }}>
+            {[
+              ["https://images.unsplash.com/photo-1581091226033-d5c48150dbaa?w=800&q=80", "Prensas Industriais"],
+              ["https://images.unsplash.com/photo-1565689157206-0fddef7589a2?w=600&q=80", "Estamparia"],
+              ["https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=600&q=80", "Repuxo Metálico"],
+              ["https://images.unsplash.com/photo-1518640467707-6811f4a6ab73?w=600&q=80", "Componentes"],
+            ].map(([src, label], i) => (
+              <FadeIn key={i} delay={i * 0.08}>
+                <GalleryItem src={src} label={label} />
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CONTATO ── */}
+      <section id="contato" style={{ padding: "120px 6vw", background: "#f7f9ff" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <FadeIn>
+            <div style={{ textAlign: "center", marginBottom: 60 }}>
+              <div style={{ display: "inline-block", background: "#eef2ff", color: "#1a3a7c", fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", padding: "5px 12px", borderRadius: 4, marginBottom: 16 }}>
+                Contato
+              </div>
+              <h2 style={{ fontSize: "clamp(32px,4vw,52px)", fontWeight: 700, letterSpacing: -1, color: "#0d1b3e", marginBottom: 12 }}>
+                Solicite seu orçamento
+              </h2>
+              <p style={{ fontSize: 15, color: "#4a5568", maxWidth: 420, margin: "0 auto" }}>
+                Preencha o formulário e nossa equipe técnica entra em contato em breve.
+              </p>
+            </div>
+          </FadeIn>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 48 }}>
+            <FadeIn>
+              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                {[
+                  ["📍", "Endereço", "Rua João Nincão, 229 – Galpão 06\nCapuava, Mauá – SP · CEP 09380-116"],
+                  ["📞", "Telefone / WhatsApp", "(11) 4555-2770\n(11) 99787-5289"],
+                  ["✉️", "E-mail", "diretoria@stampoferr.com.br"],
+                  ["🕘", "Horário Comercial", "Segunda a Sexta · 8h às 18h"],
+                ].map(([icon, label, val]) => (
+                  <div key={label} style={{
+                    display: "flex", gap: 16, alignItems: "flex-start",
+                    padding: "20px", background: "#fff",
+                    borderRadius: 10, border: "1.5px solid #e8eaf0",
+                  }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 8,
+                      background: "#eef2ff", display: "flex",
+                      alignItems: "center", justifyContent: "center", fontSize: 18,
+                      flexShrink: 0,
+                    }}>{icon}</div>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: "#1a3a7c", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{label}</div>
+                      <div style={{ fontSize: 13, color: "#4a5568", lineHeight: 1.7, whiteSpace: "pre-line" }}>{val}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </FadeIn>
+
+            <FadeIn delay={0.1}>
+              <form onSubmit={handleSend} style={{
+                background: "#fff", borderRadius: 14,
+                border: "1.5px solid #e8eaf0",
+                padding: "36px 32px",
+                display: "flex", flexDirection: "column", gap: 16,
+                boxShadow: "0 8px 40px rgba(13,27,62,0.06)",
+              }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  {[["Nome *", "nome", "text", "Seu nome"], ["Empresa", "empresa", "text", "Nome da empresa"]].map(([l, k, t, ph]) => (
+                    <div key={k}>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: "#8892a4", textTransform: "uppercase", letterSpacing: 0.8, display: "block", marginBottom: 6 }}>{l}</label>
+                      <input type={t} placeholder={ph} required={l.includes("*")} value={formState[k]} onChange={e => setFormState({ ...formState, [k]: e.target.value })} style={inp} />
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  {[["Telefone *", "tel", "tel", "(11) 00000-0000"], ["E-mail *", "email", "email", "email@empresa.com"]].map(([l, k, t, ph]) => (
+                    <div key={k}>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: "#8892a4", textTransform: "uppercase", letterSpacing: 0.8, display: "block", marginBottom: 6 }}>{l}</label>
+                      <input type={t} placeholder={ph} required value={formState[k]} onChange={e => setFormState({ ...formState, [k]: e.target.value })} style={inp} />
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "#8892a4", textTransform: "uppercase", letterSpacing: 0.8, display: "block", marginBottom: 6 }}>Serviço</label>
+                  <select value={formState.servico} onChange={e => setFormState({ ...formState, servico: e.target.value })} style={inp}>
+                    <option value="">Selecione um serviço</option>
+                    {["Estamparia Industrial", "Repuxo Metálico", "Funilaria Metálica", "Manutenção de Prensas", "Produção sob Medida", "Atacado Industrial"].map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "#8892a4", textTransform: "uppercase", letterSpacing: 0.8, display: "block", marginBottom: 6 }}>Mensagem</label>
+                  <textarea placeholder="Descreva a peça, material, quantidade e prazo esperado..." value={formState.msg} onChange={e => setFormState({ ...formState, msg: e.target.value })} style={{ ...inp, minHeight: 100, resize: "vertical" }} />
+                </div>
+                <button type="submit" style={{
+                  background: sent ? "#16a34a" : "#1a3a7c",
+                  color: "#fff", border: "none", borderRadius: 8,
+                  padding: "13px 28px", fontSize: 14, fontWeight: 600,
+                  letterSpacing: 0.2, transition: "background .3s",
+                  alignSelf: "flex-start",
+                }}>
+                  {sent ? "✓ Mensagem enviada!" : "Enviar solicitação →"}
+                </button>
+              </form>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer style={{ background: "#0d1b3e", padding: "60px 6vw 28px" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 48, paddingBottom: 40, borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 14 }}>
+                <div style={{ width: 30, height: 30, background: "rgba(255,255,255,0.15)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "#fff" }}>SF</div>
+                <span style={{ fontWeight: 700, fontSize: 15, color: "#fff" }}>Stampoferr</span>
+              </div>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, maxWidth: 220 }}>
+                Estamparia de precisão com tecnologia e qualidade no ABC Paulista.
+              </p>
+            </div>
+            {[
+              ["Empresa", ["Sobre Nós", "Serviços", "Galeria", "Contato"]],
+              ["Serviços", ["Estamparia", "Repuxo Metálico", "Funilaria", "Manutenção", "Sob Medida"]],
+              ["Contato", ["(11) 4555-2770", "(11) 99787-5289", "diretoria@stampoferr.com.br", "Mauá – SP"]],
+            ].map(([title, items]) => (
+              <div key={title}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 16 }}>{title}</div>
+                {items.map(item => <div key={item} style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 10, cursor: "pointer", transition: "color .2s" }}
+                  onMouseEnter={e => e.target.style.color="rgba(255,255,255,0.8)"}
+                  onMouseLeave={e => e.target.style.color="rgba(255,255,255,0.4)"}>{item}</div>)}
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 24, flexWrap: "wrap", gap: 8 }}>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>© 2024 Stampoferr LTDA — Todos os direitos reservados.</span>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", letterSpacing: 0.5 }}>CNPJ 42.112.832/0001-40</span>
+          </div>
+        </div>
+      </footer>
+
+      {/* WhatsApp */}
+      <a href="https://wa.me/5511997875289?text=Olá!%20Gostaria%20de%20solicitar%20um%20orçamento." target="_blank" style={{
+        position: "fixed", bottom: 24, right: 24, zIndex: 300,
+        width: 52, height: 52, borderRadius: "50%", background: "#25d366",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        boxShadow: "0 4px 20px rgba(37,211,102,0.4)",
+        textDecoration: "none", fontSize: 24,
+        transition: "transform .2s",
+      }} onMouseEnter={e => e.currentTarget.style.transform="scale(1.1)"}
+         onMouseLeave={e => e.currentTarget.style.transform=""}>
+        💬
+      </a>
+    </div>
+  );
+}
+
+function ServiceCard({ s }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{
+      background: hov ? "#0d1b3e" : "#fff",
+      border: `1.5px solid ${hov ? "#0d1b3e" : "#e8eaf0"}`,
+      borderRadius: 12, padding: "32px 28px",
+      transition: "all .3s ease",
+      boxShadow: hov ? "0 12px 40px rgba(13,27,62,0.2)" : "none",
+      transform: hov ? "translateY(-4px)" : "none",
+      cursor: "default",
+    }}>
+      <div style={{
+        width: 44, height: 44, borderRadius: 10,
+        background: hov ? "rgba(255,255,255,0.1)" : "#eef2ff",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 20, marginBottom: 20,
+        color: hov ? "#64a0ff" : "#1a3a7c",
+        fontWeight: 700, transition: "all .3s",
+      }}>{s.icon}</div>
+      <div style={{ fontSize: 16, fontWeight: 600, color: hov ? "#fff" : "#0d1b3e", marginBottom: 10, transition: "color .3s" }}>{s.name}</div>
+      <div style={{ fontSize: 13, color: hov ? "rgba(255,255,255,0.6)" : "#6b7280", lineHeight: 1.7, transition: "color .3s" }}>{s.desc}</div>
+    </div>
+  );
+}
+
+function GalleryItem({ src, label }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{
+      position: "relative", borderRadius: 12, overflow: "hidden",
+      aspectRatio: "1", cursor: "pointer",
+    }}>
+      <img src={src} alt={label} style={{
+        width: "100%", height: "100%", objectFit: "cover",
+        transform: hov ? "scale(1.05)" : "scale(1)",
+        transition: "transform .5s ease",
+      }} />
+      <div style={{
+        position: "absolute", inset: 0,
+        background: `linear-gradient(to top, rgba(13,27,62,${hov ? 0.75 : 0.3}) 0%, transparent 60%)`,
+        transition: "background .3s",
+      }} />
+      <div style={{
+        position: "absolute", bottom: 16, left: 16,
+        fontSize: 13, fontWeight: 600, color: "#fff",
+        opacity: hov ? 1 : 0.7, transition: "opacity .3s",
+      }}>{label}</div>
+    </div>
+  );
+}
